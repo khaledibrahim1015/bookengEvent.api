@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"bookingEvent.api/models"
-	"bookingEvent.api/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,26 +40,14 @@ func getEvent(ctx *gin.Context) {
 
 func createEvent(ctx *gin.Context) {
 
-	// verfiying token
-	token := ctx.Request.Header.Get("Authorization")
-	if token == "" {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Not Authorized ."})
-		return
-	}
-
-	userId, err := utils.VerfiyToken(token)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Not Authorized ."})
-		return
-	}
-
+	// middleware run before
 	var event models.Event
-	err = ctx.ShouldBindJSON(&event)
+	err := ctx.ShouldBindJSON(&event)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "could not parse the request ", "Error": err.Error()})
 		return
 	}
-
+	userId := ctx.GetInt64("userId")
 	event.UserId = userId
 	err = event.Save()
 	if err != nil {
