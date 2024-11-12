@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"bookingEvent.api/models"
+	"bookingEvent.api/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,8 +40,15 @@ func login(ctx *gin.Context) {
 	err = user.ValidateCredentails()
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		return
 	}
 
 	//  here start generate token with jwt to loged in user
+	token, err := utils.GenerateToken(user.Email, user.ID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "could not authenticate user "})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "login successfuly", "token": token})
 
 }
