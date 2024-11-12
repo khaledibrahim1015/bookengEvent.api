@@ -1,6 +1,11 @@
 package models
 
-import "bookingEvent.api/db"
+import (
+	"errors"
+
+	"bookingEvent.api/db"
+	"bookingEvent.api/utils"
+)
 
 type User struct {
 	ID       int64
@@ -20,7 +25,12 @@ func (u *User) Save() error {
 	}
 	defer stmt.Close()
 
-	result, err := stmt.Exec(u.Email, u.Password)
+	hashedPassword, err := utils.HashPassword(u.Password)
+	if err != nil {
+		return err
+	}
+
+	result, err := stmt.Exec(u.Email, hashedPassword)
 	if err != nil {
 		return err
 	}
@@ -28,5 +38,27 @@ func (u *User) Save() error {
 	userid, err := result.LastInsertId()
 	u.ID = userid
 	return err
+
+}
+
+func (usr *User) ValidateCredentails() error {
+
+	//  select current user
+	query := "SELECT id,password FROM users where email =?"
+
+	row := db.DB.QueryRow(query, usr.Email)
+
+	var retreviedHashedPassword string
+	err := row.Scan(&usr.ID, &retreviedHashedPassword)
+	if err != nil {
+		return err
+	}
+
+	// validate password
+	passwordIsValid := utils.CheckPasswordHash(usr.Password, retreviedHashedPassword)
+	if !passwordIsValid {
+		return errors.New("credentails not Vaild ")
+	}
+	return nil
 
 }
